@@ -22,6 +22,7 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     var comments = [Comment]()
     var hasComments = false
     var countOfGood = 0
+    var paramsCount = 0
     
     override func viewWillAppear(_ animated: Bool) {
         
@@ -37,7 +38,9 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     }
     override func viewDidLoad() {
 
-        
+        tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: "commentCell")
+        tableView.register(UINib(nibName: "CommentTableViewCell", bundle: nil), forCellReuseIdentifier: "commentCell")
+
         
         super.viewDidLoad()
         if good != nil{
@@ -56,11 +59,13 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
             if let id = product?.id{
                 self.getComments(id: id, completionHandler: { comms in
                     self.comments = comms
-                    
+                    for _ in 0..<self.comments.count{
+                        self.count += 1
+                    }
                     self.tableView.reloadData()
                     self.hasComments = true
                 })
-                self.count += 1
+                
             }
             
             
@@ -70,6 +75,7 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
             
             
             if let params = product?.parameters?.count{
+                self.paramsCount = params
                 count += params
             }
             
@@ -178,7 +184,11 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                 }
                 
                 if let price = product?.productPrice{
-                    cell.priceLabel.text = price + " тг."
+                    if let int = Int(price){
+                        let x = int.formattedWithSeparator
+                        cell.priceLabel.text = x + " тг."
+                    }
+                    
                 }else{
                     cell.priceLabel.text = "0 тг."
                 }
@@ -215,16 +225,7 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                 }
                 
             }
-            
-            else if i == count - 1{
-                    let cell = tableView.dequeueReusableCell(withIdentifier: "comCells", for: indexPath) as! CommentsTVC
-                    cell.coms = self.comments
-                    cell.tableView.reloadData()
-
-                    return cell
-                }
-            
-            else{
+            else if i > 2 && i < 3 + paramsCount{
                 if let params = product?.parameters{
                     let cell = tableView.dequeueReusableCell(withIdentifier: "paramsCell", for: indexPath) as! ParamsTVC
                     if let name = params[indexPath.row - 3].name{
@@ -246,6 +247,31 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                     return cell
                     
                 }
+            }
+            else {
+                if let cell = tableView.dequeueReusableCell(withIdentifier: "commentCell", for: indexPath) as? CommentTableViewCell{
+                    let i = indexPath.row - (3 + paramsCount)
+                    if let text = self.comments[i].review{
+                        cell.commentLabel.text = text
+                    }
+                    if let text = self.comments[i].status{
+                        if let rating = Double(text){
+                            cell.cosmosView.rating = rating
+                        }
+                        //                cell.ratingLabel.text = text
+                    }
+                    if let text = self.comments[i].username{
+                        cell.nameLabel.text = text
+                    }
+                    if let date = self.comments[i].created{
+                        cell.dateLabel.text = self.makeDateForComment(timestamp: date)
+                    }
+                    return cell
+                }else{
+                    return UITableViewCell()
+                }
+                
+//                return cell
             }
             
         }
@@ -846,7 +872,6 @@ class CommentsTVC: UITableViewCell, UITableViewDelegate, UITableViewDataSource {
                 cell.nameLabel.text = text
             }
             if let date = coms[i].created{
-                
                 cell.dateLabel.text = self.makeDateForComment(timestamp: date)
             }
             

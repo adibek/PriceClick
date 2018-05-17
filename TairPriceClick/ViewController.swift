@@ -42,6 +42,7 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
                 tabItem.badgeValue = nil
             }
         }
+
         searchBar.delegate = self
     }
     override func viewDidLoad() {
@@ -278,7 +279,18 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
     //MARK: - search bar
     @IBAction func searchAction(_ sender: Any) {
 
-        self.searchBar.frame = CGRect(x: 0, y: 0, width: width, height: 70)
+        
+        var y = 0
+        if UIDevice().userInterfaceIdiom == .phone {
+            switch UIScreen.main.nativeBounds.height {
+            case 2436:
+                y = 24
+            default:
+                y = 0
+            }
+        }
+        self.searchBar.frame = CGRect(x: 0, y: y, width: Int(width), height: 70)
+        
         for i in searchBar.subviews{
             if i is UIButton{
                 var c = searchBar.subviews.last as? UIButton

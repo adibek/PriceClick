@@ -28,7 +28,7 @@ class InfoVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     // MARK: - Functions
     
     func shareFunc() {
-        let activityVC = UIActivityViewController(activityItems: ["PriceClick - https://itunes.apple.com/us/app/price-click/id1384640165?l=ru&ls=1&mt=8"], applicationActivities: nil)
+        let activityVC = UIActivityViewController(activityItems: ["В приложении Price Click удобно и выгодно покупать, не выходя из дома. Рекомендую! - https://itunes.apple.com/us/app/price-click/id1384640165?l=ru&ls=1&mt=8"], applicationActivities: nil)
         self.present(activityVC, animated: true, completion: nil)
     }
     

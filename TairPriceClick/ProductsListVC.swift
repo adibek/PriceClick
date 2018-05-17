@@ -62,11 +62,24 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
         collectionView.delegate = self
         collectionView.dataSource = self
         hideKeyboardWhenTappedAround()
-        
         self.backgroundImage()
 
     }
     override func viewWillAppear(_ animated: Bool) {
+        if isSearch{
+            if products.count < 1{
+                self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемых товаров пока что нет в наличии. Попробуйте проверить позже.")
+                self.title = "Результаты поиска"
+                self.infoButton.image = nil
+                self.infoButton.isEnabled = false
+            }else{
+                self.collectionView.reloadData()
+            }
+            
+        }else{
+            makePage()
+        }
+        
         if UserDefaults.standard.bool(forKey: "arrowShown"){
             if UserDefaults.standard.integer(forKey: "count") < 2{
                 self.backView.isHidden = true
@@ -103,22 +116,11 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
             print("goods count", goods.count)
         }
         navigationController?.navigationBar.isTranslucent = false
-        if isSearch{
-            if products.count < 1{
-                self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемых товаров пока что нет в наличии. Попробуйте проверить позже.")
-                self.title = "Результаты поиска"
-                self.infoButton.image = nil
-                self.infoButton.isEnabled = false
-            }else{
-                self.collectionView.reloadData()
-            }
-            
-        }else{
-            makePage()
-        }
+
         
     }
     func makePage(){
+        priceImageView.image = nil
         
         if let cityId = UserDefaults.standard.string(forKey: "cityId"){
             var url = ""
@@ -181,7 +183,8 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     @IBOutlet weak var collectionView: UICollectionView!
     @IBAction func byTop(_ sender: Any) {
         
-        priceImageView.image = UIImage(named: "sortby")
+        priceImageView.image = nil
+        
         for i in 0..<products.count{
             for j in 0..<products.count{
                 if let i_top = products[i].productRating, let j_top = products[i].productRating{
@@ -200,7 +203,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     }
     @IBAction func byPrice(_ sender: Any) {
         if isEncrease{
-            priceImageView.image = #imageLiteral(resourceName: "sortUp")
+            priceImageView.image = #imageLiteral(resourceName: "111 голубой 2")
             for i in 0..<products.count{
                 for j in 0..<products.count{
                     if Int(products[i].productPrice!)! > Int(products[j].productPrice!)!{
@@ -211,7 +214,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
             byTopButton.setTitleColor(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0), for: .normal)
             byPriceButton.setTitleColor(#colorLiteral(red: 0, green: 0.9914394021, blue: 1, alpha: 1), for: .normal)
         }else{
-            priceImageView.image = #imageLiteral(resourceName: "sortDown")
+            priceImageView.image = #imageLiteral(resourceName: "111 голубой 1")
             for i in 0..<products.count{
                 for j in 0..<products.count{
                     if Int(products[i].productPrice!)! < Int(products[j].productPrice!)!{
@@ -235,15 +238,15 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     
     @IBAction func changeButton(_ sender: Any) {
         if mode == 0{
-            self.changeButton.setImage(UIImage(named: "icon_card_item"), for: .normal)
+            self.changeButton.setImage(#imageLiteral(resourceName: "icon_card_item"), for: .normal)
             mode = 1
             self.collectionView.reloadData()
         }else if mode == 1{
-            self.changeButton.setImage(UIImage(named: "icon_grid"), for: .normal)
+            self.changeButton.setImage(UIImage(named: "444"), for: .normal)
             mode = 2
             self.collectionView.reloadData()
         }else{
-            self.changeButton.setImage(UIImage(named: "icon_list"), for: .normal)
+            self.changeButton.setImage(UIImage(named: "222"), for: .normal)
             mode = 0
             self.collectionView.reloadData()
         }
@@ -926,6 +929,7 @@ class cvc: UICollectionViewCell {
     @IBOutlet weak var toShopButton: UIButton!{
         didSet{
             toShopButton.layer.cornerRadius = 4
+            toShopButton.layer.masksToBounds = true
         }
     }
     @IBOutlet weak var ratingLabel: UILabel!

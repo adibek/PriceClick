@@ -99,7 +99,8 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
         for item in goods{
             sum += item.count * Int(item.price)!
         }
-        self.orderButton.setTitle("ОФОРМИТЬ ЗАКАЗ: \(sum) тг.", for: .normal)
+        let xx = sum.formattedWithSeparator
+        self.orderButton.setTitle("ОФОРМИТЬ ЗАКАЗ: \(xx) тг.", for: .normal)
         collectionView.reloadData()
     }
     

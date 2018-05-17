@@ -15,7 +15,11 @@ class CommentTableViewCell: UITableViewCell {
     @IBOutlet weak var nameLabel: UILabel!
     @IBOutlet weak var commentLabel: UILabel!
     
-    @IBOutlet var cosmosView: CosmosView!
+    @IBOutlet var cosmosView: CosmosView!{
+        didSet{
+            cosmosView.isUserInteractionEnabled = false
+        }
+    }
     @IBOutlet weak var dateLabel: UILabel!
     
     

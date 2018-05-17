@@ -322,7 +322,61 @@ extension UIViewController{
     }
 
 
-
+    func makeDateForComment(timestamp: String) -> String{
+        if let timeStamp = Double(timestamp){
+            
+            let date = Date(timeIntervalSince1970: timeStamp)
+            let dateFormatter = DateFormatter()
+            dateFormatter.timeZone = TimeZone(abbreviation: "GMT")
+            dateFormatter.locale = NSLocale.current
+            dateFormatter.dateFormat = "MM"
+            var strDate = dateFormatter.string(from: date)
+            
+            let dateFormatter1 = DateFormatter()
+            dateFormatter1.timeZone = TimeZone(abbreviation: "GMT")
+            dateFormatter1.locale = NSLocale.current
+            dateFormatter1.dateFormat = "dd"
+            var strDate1 = dateFormatter1.string(from: date)
+            
+            let dateFormatter2 = DateFormatter()
+            dateFormatter2.timeZone = TimeZone(abbreviation: "GMT")
+            dateFormatter2.locale = NSLocale.current
+            dateFormatter2.dateFormat = "yyyy"
+            var strDate2 = dateFormatter2.string(from: date)
+            
+            
+            switch strDate {
+            case "01":
+                strDate = "Января"
+            case "02":
+                strDate = "Февраля"
+            case "03":
+                strDate = "Марта"
+            case "04":
+                strDate = "Апреля"
+            case "05":
+                strDate = "Мая"
+            case "06":
+                strDate = "Июня"
+            case "07":
+                strDate = "Июля"
+            case "08":
+                strDate = "Августа"
+            case "09":
+                strDate = "Сентября"
+            case "10":
+                strDate = "Октября"
+            case "11":
+                strDate = "Ноября"
+            default:
+                strDate = "Декабря"
+            }
+            
+            return "\(strDate1) \(strDate), \(strDate2)"
+        }
+        return ""
+        
+    }
     
 }
 
