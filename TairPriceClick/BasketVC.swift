@@ -17,7 +17,7 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
     var widths = CGFloat()
     var heights = CGFloat()
     var shopInfo = [ShopInfo]()
-    
+    var goodForSegue = Good()
     
     @IBOutlet weak var orderButton: UIButton!{
         didSet{
@@ -26,8 +26,10 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
     }
     
     override func viewWillAppear(_ animated: Bool) {
+        
         makePage()
     }
+
     override func viewDidLoad() {
         super.viewDidLoad()
         collectionView.delegate = self
@@ -35,12 +37,15 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
         self.backgroundImage()
         widths = UIScreen.main.bounds.size.width * 0.495
         heights = self.widths * 1.68
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
+        navigationController?.navigationBar.isTranslucent = false
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
     }
 
     @IBOutlet weak var collectionView: UICollectionView!
     @IBAction func clearBasket(_ sender: Any) {
         if goods.count > 0{
-            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы уверены, что хотите очистить корзину?", preferredStyle: UIAlertControllerStyle.alert)
+            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы точно уверены, что хотите удалить все товары из корзины? Очистить корзину?", preferredStyle: UIAlertControllerStyle.alert)
             
             refreshAlert.addAction(UIAlertAction(title: "Да", style: .default, handler: { (action: UIAlertAction!) in
                 let realm = try? Realm()
@@ -48,6 +53,18 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
                 try? realm?.write {
                     realm?.delete(res!)
                     self.makePage()
+                }
+                if let tabItems = self.tabBarController?.tabBar.items as NSArray!
+                {
+                    // In this case we want to modify the badge number of the third tab:
+                    let tabItem = tabItems[2] as! UITabBarItem
+                    let realm = try? Realm()
+                    let result = realm?.objects(ProductItem.self).count
+                    if result != 0{
+                        tabItem.badgeValue = "\(result!)"
+                    }else{
+                        tabItem.badgeValue = nil
+                    }
                 }
             }))
             
@@ -60,7 +77,7 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
 
 
         }else{
-            self.showAlert(title: "Внимание", message: "Корзина пуста")
+            self.showAlert(title: "Внимание", message: "Ваша корзина товаров пуста")
         }
         
     }
@@ -76,7 +93,20 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
                         }
                         if summa < sum{
                             let xx = sum.formattedWithSeparator
-                            self.showAlert(title: "Внимание", message: "Недостаточная сумма для совершения заказа. Минимальная сумма заказа в \(self.goods[0].shopName) - \(xx) тг.")
+                            let refreshAlert = UIAlertController(title: "Внимание", message: "Недостаточная сумма для совершения заказа. Минимальная сумма заказа в \(self.goods[0].shopName) - \(xx) тг. \nЖелаете перейти в магазин и продолжить шоппинг?", preferredStyle: UIAlertControllerStyle.alert)
+                            
+                            refreshAlert.addAction(UIAlertAction(title: "Да", style: .default, handler: { (action: UIAlertAction!) in
+                                self.myTitle = info[0].shopName!
+                                self.shopId = info[0].shopId!
+                                self.performSegue(withIdentifier: "toProductsShop", sender: self)
+                            }))
+                            
+                            refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
+                                
+                            }))
+                            
+                            self.present(refreshAlert, animated: true, completion: nil)
+                            
                         }else{
                             if let _ = UserDefaults.standard.string(forKey: "authKey"){
                                 self.performSegue(withIdentifier: "toPay", sender: self)
@@ -88,13 +118,15 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
                 }
             })
         }else{
-            self.showAlert(title: "Внимание", message: "Корзина пуста")
+            self.showAlert(title: "Внимание", message: "Ваша корзина товаров пуста")
         }
     }
     
     func makePage(){
-        let result = realm?.objects(ProductItem.self)
-        goods = Array(result!)
+        if let result = realm?.objects(ProductItem.self){
+            goods = Array(result)
+        }
+        
         var sum = 0
         for item in goods{
             sum += item.count * Int(item.price)!
@@ -137,7 +169,9 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
         return cell
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        
+        fromBasket = true
+        self.goodForSegue = self.makeGoodFromProduct(productItem: self.goods[indexPath.row])!
+        self.performSegue(withIdentifier: "toGoodFromBasket", sender: self)
     }
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
         return CGSize(width: widths, height: heights)
@@ -158,6 +192,15 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
         try? realm?.write {
             goods[tag].count += 1
         }
+        let result = realm?.objects(ProductItem.self)
+        goods = Array(result!)
+        var sum = 0
+        for item in goods{
+            sum += item.count * Int(item.price)!
+        }
+        let xx = sum.formattedWithSeparator
+        self.orderButton.setTitle("ОФОРМИТЬ ЗАКАЗ: \(xx) тг.", for: .normal)
+        
         cell.countLabel.text = "\(Int(cell.countLabel.text!)! + 1)"
         
     }
@@ -168,12 +211,24 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
         
         let realm = try? Realm()
         if goods[tag].count < 2{
-            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы уверены, что хотите удалить \(goods[tag].name) из корзины", preferredStyle: UIAlertControllerStyle.alert)
+            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы уверены, что хотите удалить \(goods[tag].name) из корзины?", preferredStyle: UIAlertControllerStyle.alert)
             
             refreshAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (action: UIAlertAction!) in
                 let realm = try? Realm()
                 try? realm?.write {
                     realm?.delete(self.goods[tag])
+                    if let tabItems = self.tabBarController?.tabBar.items as NSArray!
+                    {
+                        // In this case we want to modify the badge number of the third tab:
+                        let tabItem = tabItems[2] as! UITabBarItem
+                        let realm = try? Realm()
+                        let result = realm?.objects(ProductItem.self).count
+                        if result != 0{
+                            tabItem.badgeValue = "\(result!)"
+                        }else{
+                            tabItem.badgeValue = nil
+                        }
+                    }
                     self.makePage()
                 }
                 
@@ -189,6 +244,14 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
             try? realm?.write {
                 goods[tag].count -= 1
                 cell.countLabel.text = "\(Int(cell.countLabel.text!)! - 1)"
+                let result = realm?.objects(ProductItem.self)
+                goods = Array(result!)
+                var sum = 0
+                for item in goods{
+                    sum += item.count * Int(item.price)!
+                }
+                let xx = sum.formattedWithSeparator
+                self.orderButton.setTitle("ОФОРМИТЬ ЗАКАЗ: \(xx) тг.", for: .normal)
             }
         }
         
@@ -196,6 +259,19 @@ class BasketVC: UIViewController, UICollectionViewDelegate, UICollectionViewData
         
     }
     
+    var shopId = ""
+    var myTitle = ""
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "toProductsShop"{
+            let prodList: ProductsListVC = segue.destination as! ProductsListVC
+            prodList.type = 1
+            prodList.shopId = shopId
+            prodList.title = myTitle
+        }else if segue.identifier == "toGoodFromBasket"{
+            let prod: ProductVC = segue.destination as! ProductVC
+            prod.good = self.goodForSegue
+        }
+    }
 }
 
 class basketCvc: UICollectionViewCell {
@@ -248,5 +324,18 @@ extension UIViewController{
             blue: CGFloat(rgbValue & 0x0000FF) / 255.0,
             alpha: CGFloat(1.0)
         )
+    }
+    func makeGoodFromProduct(productItem: ProductItem) -> Good?{
+        let good = Good()
+        good.params = productItem.params
+        good.id = productItem.id
+        good.name = productItem.name
+        good.count = productItem.count
+        good.mainImage = productItem.mainImage
+        good.price = productItem.price
+        good.descriptionField = productItem.descriptionField
+        good.rating = productItem.rating
+        
+        return good
     }
 }

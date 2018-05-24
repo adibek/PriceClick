@@ -33,7 +33,7 @@ class ShopInfoVC: UIViewController, UITableViewDataSource, UITableViewDelegate {
         case 0:
             cell.infoLabel.text = "Минимальная сумма заказа"
             if let min = info?.shopMinPrice{
-                cell.valueLabel.text = min
+                cell.valueLabel.text = min + " тг."
             }
         case 1:
             

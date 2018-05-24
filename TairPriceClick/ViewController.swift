@@ -28,7 +28,14 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
     var isFirst = true
     
     //MARK: - LifeCycle
+    override var preferredStatusBarStyle : UIStatusBarStyle {
+        return .lightContent
+    }
     override func viewWillAppear(_ animated: Bool) {
+        
+        UIApplication.shared.statusBarStyle = .lightContent
+
+//        self.view.backgroundColor = UIColor.white
         isSearch = false
         if let tabItems = self.tabBarController?.tabBar.items as NSArray!
         {
@@ -36,18 +43,24 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
             let tabItem = tabItems[2] as! UITabBarItem
             let realm = try? Realm()
             let result = realm?.objects(ProductItem.self).count
-            if result != 0{
-                tabItem.badgeValue = "\(result!)"
-            }else{
-                tabItem.badgeValue = nil
+            if let res = result{
+                if res != 0{
+                    tabItem.badgeValue = "\(res)"
+                }else{
+                    tabItem.badgeValue = nil
+                }
             }
+            
         }
-
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
+        navigationController?.navigationBar.isTranslucent = false
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
         searchBar.delegate = self
     }
     override func viewDidLoad() {
         super.viewDidLoad()
         pagerView.isInfinite = true
+        
         self.tableView.delegate = self
         self.tableView.dataSource = self
         self.pagerView.delegate = self
@@ -89,6 +102,7 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
         didSet {
             self.pagerView.register(FSPagerViewCell.self, forCellWithReuseIdentifier: "cell")
             self.typeIndex = 3
+            
         }
     }
     @IBOutlet var backView: UIView!
@@ -111,7 +125,9 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
             self.getSliderImages(id: id, completionHandler: { images in
                 self.sliderImages = images
                 self.pagerView.reloadData()
+                
             })
+            
             self.getMainCategories(completionHandler: { categories in
                 self.categories = categories
                 self.tableView.reloadData()
@@ -268,7 +284,7 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
         }else if segue.identifier == "toProductsList"{
             let productsVC: ProductsListVC = segue.destination as! ProductsListVC
             if isSearch{
-                productsVC.products = self.products
+                productsVC.query = self.query
             }else{
                 productsVC.secId = selectedId
             }
@@ -302,14 +318,17 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
         currentWindow?.addSubview(searchBar)
     }
     var products = [Product]()
+    var query = [String: AnyObject]()
+    
     func searchBarSearchButtonClicked(_ searchBar: UISearchBar) {
-        let query = ["query" : searchBar.text!]
+        query = ["query" : searchBar.text!] as [String : AnyObject]
+        isSearch = true
+//        self.products = goods
         self.searchBar.removeFromSuperview()
-        self.searchProduct(parameters: query as [String : AnyObject], completionHandler: { goods in
-            isSearch = true
-            self.products = goods
-            self.performSegue(withIdentifier: "toProductsList", sender: self)
-        })
+        self.performSegue(withIdentifier: "toProductsList", sender: self)
+        
+        self.startLoading()
+
     }
     func searchBarCancelButtonClicked(_ searchBar: UISearchBar) {
         isSearch = false
@@ -319,6 +338,7 @@ class ViewController: UIViewController, FSPagerViewDelegate, FSPagerViewDataSour
     }
     override func viewWillDisappear(_ animated: Bool) {
         searchBar.text = ""
+        searchBar.removeFromSuperview()
     }
 }
 

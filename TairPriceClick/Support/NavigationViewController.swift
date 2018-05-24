@@ -12,7 +12,7 @@ class NavigationViewController: UINavigationController {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        self.navigationBar.barTintColor = #colorLiteral(red: 0.1084294441, green: 0.1084294441, blue: 0.1084294441, alpha: 1)
         // Do any additional setup after loading the view.
     }
 

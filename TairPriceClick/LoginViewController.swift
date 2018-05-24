@@ -26,7 +26,7 @@ class LoginViewController: UIViewController, AKMaskFieldDelegate, UITableViewDel
     var userInfo = [User]()
     
     
-    @IBOutlet weak var phone: AKMaskField!
+    @IBOutlet weak var phone: UITextField!
     @IBOutlet weak var mainView: UIView!
     @IBOutlet weak var editButton: UIButton!
     @IBOutlet var backEditView: UIButton!
@@ -82,8 +82,8 @@ class LoginViewController: UIViewController, AKMaskFieldDelegate, UITableViewDel
                                                                  attributes:[NSAttributedStringKey.foregroundColor: UIColor.red])
             print("Please input all data")
         }
-        else if phone.text?.isValidPhone == false {
-            phone.text = ""
+        else if phone.text == "" {
+            
             phone.attributedPlaceholder = NSAttributedString(string:"* заполните поле",
                                                              attributes:[NSAttributedStringKey.foregroundColor: UIColor.red])
         }
@@ -98,7 +98,7 @@ class LoginViewController: UIViewController, AKMaskFieldDelegate, UITableViewDel
                 city.layer.borderWidth = 1
                 city.layer.borderColor = UIColor.lightGray.cgColor
                 city.layer.cornerRadius = 5
-                editButton.setImage(#imageLiteral(resourceName: "ok"), for: .normal)
+                editButton.setImage(#imageLiteral(resourceName: "checkmark"), for: .normal)
             }
             else {
                 name.isEnabled = false
@@ -109,7 +109,7 @@ class LoginViewController: UIViewController, AKMaskFieldDelegate, UITableViewDel
                 phone.borderStyle = UITextBorderStyle.none
                 city.layer.borderWidth = 0
                 city.setTitleColor(.black, for: .normal)
-                editButton.setImage(#imageLiteral(resourceName: "pencil"), for: .normal)
+                editButton.setImage(UIImage(named: "карандаш"), for: .normal)
                 changeUserInfo()
                 
             }
@@ -122,7 +122,7 @@ class LoginViewController: UIViewController, AKMaskFieldDelegate, UITableViewDel
         if let key = UserDefaults.standard.string(forKey: "authKey"){
             self.authKey = key
         }
-        phone.maskDelegate = self
+//        phone.maskDelegate = self
       //  self.title = "Регистрация"
         hideKeyboardWhenTappedAround()
         backEditView.layer.cornerRadius = 30

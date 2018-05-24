@@ -11,6 +11,7 @@ import FSPagerView
 import RealmSwift
 import Cosmos
 
+var fromBasket = Bool()
 var params = [Params]()
 
 class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
@@ -19,10 +20,13 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     var product: Product?
     var isGood = false
     var count = 2
+    var scroll = false
     var comments = [Comment]()
     var hasComments = false
     var countOfGood = 0
     var paramsCount = 0
+    var isFav = false
+    var id = ""
     
     override func viewWillAppear(_ animated: Bool) {
         
@@ -30,14 +34,15 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         self.navigationController?.navigationBar.shadowImage = UIImage()
         self.navigationController?.navigationBar.isTranslucent = true
         self.navigationController?.view.backgroundColor = .clear
-        
 
     }
     override func viewWillDisappear(_ animated: Bool) {
         params = []
+        fromBasket = false
     }
     override func viewDidLoad() {
-
+        
+        
         tableView.register(CommentTableViewCell.self, forCellReuseIdentifier: "commentCell")
         tableView.register(UINib(nibName: "CommentTableViewCell", bundle: nil), forCellReuseIdentifier: "commentCell")
 
@@ -45,9 +50,14 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         super.viewDidLoad()
         if good != nil{
             isGood = true
+            id = good!.id
+            if let paramsCount = good?.params.count{
+                count += paramsCount
+            }
             
         }else{
             isGood = false
+            id = product!.id!
             let realm  = try? Realm()
             let result = realm?.objects(ProductItem.self).filter("id == '\(product!.id!)'")
             if let res = result{
@@ -80,12 +90,77 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
             }
             
         }
+        let realm = try? Realm()
+        let obj = realm?.objects(Good.self).filter("id == '\(id)'")
+        let res = Array(obj!)
+        if res.isEmpty{
+            isFav = false
+        }else{
+            isFav = true
+        }
+        
+        
         tableView.delegate = self
         tableView.dataSource = self
         
         tableView.reloadData()
+        DispatchQueue.main.async {
+            if self.scroll{
+                self.scrollToBottom()
+                let cells = self.tableView.visibleCells
+                for cell in cells{
+                    if cell.reuseIdentifier == "colorCell" || cell.reuseIdentifier == "paramsCell" {
+                        cell.backgroundColor = #colorLiteral(red: 1, green: 0.796098727, blue: 0.7392509707, alpha: 0.5959706764)
+                    }
+                }
+            }
+
+        }
+        
     }
+    
+    
     @IBOutlet weak var tableView: UITableView!
+    
+    @objc func updateFav(_ sender: AnyObject) {
+        let cell = tableView.cellForRow(at: IndexPath(row: 0, section: 0)) as! PagerViewTVC
+        let realm = try? Realm()
+        let obj = realm?.objects(Good.self).filter("id == '\(id)'")
+        let res = Array(obj!)
+        if res.isEmpty{
+            if isGood{
+                try? realm?.write {
+                    realm?.add(good!)
+                }
+                
+            }else{
+                let good1 = self.createGoodObject(product: product!)
+                try? realm?.write {
+                    realm?.add(good1!)
+                }
+                
+            }
+            cell.heartButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
+        }else{
+            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы уверенны, что хотите удалить товар из избранного?", preferredStyle: UIAlertControllerStyle.alert)
+            
+            refreshAlert.addAction(UIAlertAction(title: "Да", style: .default, handler: { (action: UIAlertAction!) in
+                
+                try? realm?.write {
+                    realm?.delete(obj!)
+                }
+            }))
+            
+            refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
+                
+            }))
+            
+            present(refreshAlert, animated: true, completion: nil)
+
+            cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
+        }
+    }
+    
     
     func tableView(_ tableView: UITableView, numberOfRowsInSection section: Int) -> Int {
         return count
@@ -93,9 +168,39 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let i = indexPath.row
         if isGood{
+            if fromBasket{
+                if i > 1{
+                    if let parameters = good?.params{
+                        let myParams = Array(parameters)
+                        if myParams[i - 2].name == "Цвет"{
+                            let cell = tableView.dequeueReusableCell(withIdentifier: "colorCell", for: indexPath) as! ColorTVC
+                            var arr = [String]()
+                            arr.append(myParams[i - 2].value)
+                            cell.colors = arr
+                            cell.collectionView.reloadData()
+                            return cell
+                        }else{
+                            let cell = tableView.dequeueReusableCell(withIdentifier: "paramsCell", for: indexPath) as! ParamsTVC
+                            var arr = [String]()
+                            arr.append(myParams[i - 2].value)
+                            cell.parameters = arr
+                            cell.nameLabel.text = myParams[i - 2].name
+                            cell.collectionView.reloadData()
+                            return cell
+                        }
+                    }
+                }
+                
+            }
+            
             if i == 0{
                 let cell = tableView.dequeueReusableCell(withIdentifier: "pagerCell", for: indexPath) as! PagerViewTVC
-                
+                if isFav{
+                    cell.heartButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
+                }else{
+                    cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
+                }
+
                 if let images = good?.imgs{
                     if images.count > 0{
                         for i in images{
@@ -103,7 +208,7 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                         }
                         return cell
                     }else{
-                        cell.images[0] = (good?.mainImage)!
+                        cell.images.append((good?.mainImage)!)
                         cell.pagerView.reloadData()
                         return cell
                     }
@@ -115,8 +220,16 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                 }
             }else{
                 let cell = tableView.dequeueReusableCell(withIdentifier: "infoCell", for: indexPath) as! ProductIntTVC
-                cell.plusMinusView.removeFromSuperview()
-                cell.numberLabel.text = "\(countOfGood)"
+                if fromBasket == false{
+                    cell.plusMinusView.removeFromSuperview()
+                    
+                }else{
+                    cell.plusButton.addTarget(self, action: #selector(plus(_:)), for: .touchUpInside)
+                    cell.minusButton.addTarget(self, action: #selector(minus(_:)), for: .touchUpInside)
+                    cell.numberLabel.text = "\(good!.count)"
+                }
+                
+                
                 if showName == false{
                     cell.shopButton.removeFromSuperview()
                     cell.smallView.removeFromSuperview()
@@ -147,12 +260,18 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                 cell.shopButton.addTarget(self, action: #selector(toShop(_:)), for: .touchUpInside)
                 return cell
             }
-            
+
         }
         else{
             if i == 0{
                 let cell = tableView.dequeueReusableCell(withIdentifier: "pagerCell", for: indexPath) as! PagerViewTVC
-                
+                if isFav{
+                    cell.heartButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
+                }else{
+                    cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
+                }
+                cell.heartButton.addTarget(self, action: #selector(updateFav(_:)), for: .touchUpInside)
+                cell.backFavButton.addTarget(self, action: #selector(updateFav(_:)), for: .touchUpInside)
                 if let images = product?.productImgs{
                     cell.images = images
                     cell.pagerView.reloadData()
@@ -282,76 +401,45 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
 
     
     @objc func plus(_ sender: AnyObject) {
-        
         let realm = try? Realm()
-        
-        let id = product!.shopId!
-        let result = realm?.objects(ProductItem.self)
-        if let count = result?.count{
-            if count < 1{
-                self.addGood()
-            }else{
-                let result = realm?.objects(ProductItem.self).filter("shopId == '\(id)'")
-                if let count = result?.count{
-                    if count > 0{
-                        self.addGood()
-                    }else{
-                        let refreshAlert = UIAlertController(title: "Внимание", message: "В Вашей корзине находится неоформленный заказ с другого магазина. Очистить корзину?", preferredStyle: UIAlertControllerStyle.alert)
-                        
-                        refreshAlert.addAction(UIAlertAction(title: "Да", style: .default, handler: { (action: UIAlertAction!) in
-                            let realm = try? Realm()
-                            let result = realm?.objects(ProductItem.self)
-                            try? realm?.write {
-                                realm?.delete(result!)
-                            }
-                            self.addGood()
-                        }))
-                        
-                        refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
-                            
-                        }))
-                        
-                        present(refreshAlert, animated: true, completion: nil)
-                    }
-                }
-                
+        if fromBasket{
+            
+            let result = realm?.objects(ProductItem.self).filter("id == '\(good!.id)'")
+            
+            try? realm?.write {
+//                good?.count += 1
+                Array(result!)[0].count += 1
             }
-        }
-
-        
-     
-    }
-    
-    @objc func minus(_ sender: AnyObject) {
-            if params.count < count - 2{
-            self.showAlert(title: "Внимание", message: "Выберите все параметры")
+            let cell = tableView.cellForRow(at: IndexPath(row: 1, section: 0)) as! ProductIntTVC
+            cell.numberLabel.text = "\(Int(cell.numberLabel.text!)! + 1)"
+            
         }else{
-            let realm = try? Realm()
+            
             
             let id = product!.shopId!
             let result = realm?.objects(ProductItem.self)
             if let count = result?.count{
                 if count < 1{
-                    self.removeGood()
+                    self.addGood()
                 }else{
                     let result = realm?.objects(ProductItem.self).filter("shopId == '\(id)'")
                     if let count = result?.count{
                         if count > 0{
-                            self.removeGood()
+                            self.addGood()
                         }else{
-                            let refreshAlert = UIAlertController(title: "Внимание", message: "Корзина будет очищена", preferredStyle: UIAlertControllerStyle.alert)
+                            let refreshAlert = UIAlertController(title: "Внимание", message: "В Вашей корзине находится неоформленный заказ с другого магазина. Оформить заказ сейчас или удалить его?", preferredStyle: UIAlertControllerStyle.alert)
                             
-                            refreshAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (action: UIAlertAction!) in
+                            refreshAlert.addAction(UIAlertAction(title: "Оформить", style: .default, handler: { (action: UIAlertAction!) in
+                                self.tabBarController?.selectedIndex = 2
+                            }))
+                            
+                            refreshAlert.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { (action: UIAlertAction!) in
                                 let realm = try? Realm()
                                 let result = realm?.objects(ProductItem.self)
                                 try? realm?.write {
                                     realm?.delete(result!)
                                 }
-                                self.removeGood()
-                            }))
-                            
-                            refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
-                                
+                                self.addGood()
                             }))
                             
                             present(refreshAlert, animated: true, completion: nil)
@@ -360,9 +448,77 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                     
                 }
             }
-
-           
+            
+            
+            
         }
+        
+        
+    }
+    
+    @objc func minus(_ sender: AnyObject) {
+        if fromBasket{
+            let cell = tableView.cellForRow(at: IndexPath(row: 1, section: 0)) as! ProductIntTVC
+            if Int(cell.numberLabel.text!)! > 0{
+                let realm = try? Realm()
+                let result = realm?.objects(ProductItem.self).filter("id == '\(good!.id)'")
+                
+                if Int(cell.numberLabel.text!)! < 2{
+                    cell.numberLabel.text = "0"
+                    try? realm?.write {
+                        realm?.delete(Array(result!)[0])
+                    }
+                }else{
+                    try? realm?.write {
+                        Array(result!)[0].count -= 1
+                    }
+                    cell.numberLabel.text = "\(Int(cell.numberLabel.text!)! - 1)"
+                }
+            }
+        }else{
+            if params.count < count - 2{
+                self.showAlert(title: "Внимание", message: "Выберите все параметры")
+            }else{
+                let realm = try? Realm()
+                
+                let id = product!.shopId!
+                let result = realm?.objects(ProductItem.self)
+                if let count = result?.count{
+                    if count < 1{
+                        self.removeGood()
+                    }else{
+                        let result = realm?.objects(ProductItem.self).filter("shopId == '\(id)'")
+                        if let count = result?.count{
+                            if count > 0{
+                                self.removeGood()
+                            }else{
+                                let refreshAlert = UIAlertController(title: "Внимание", message: "Корзина будет очищена", preferredStyle: UIAlertControllerStyle.alert)
+                                
+                                refreshAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (action: UIAlertAction!) in
+                                    let realm = try? Realm()
+                                    let result = realm?.objects(ProductItem.self)
+                                    try? realm?.write {
+                                        realm?.delete(result!)
+                                    }
+                                    self.removeGood()
+                                }))
+                                
+                                refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
+                                    
+                                }))
+                                
+                                present(refreshAlert, animated: true, completion: nil)
+                            }
+                        }
+                        
+                    }
+                }
+                
+                
+            }
+        }
+        
+      
         }
     func scrollToBottom(){
         DispatchQueue.main.async {
@@ -375,7 +531,7 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
         let indexPath = IndexPath(row: 1, section: 0)
         let cell = tableView.cellForRow(at: indexPath) as! ProductIntTVC
         
-        if params.count < count - 3{
+        if params.count < count - 2{
             self.scrollToBottom()
             let cells = self.tableView.visibleCells
             for cell in cells{
@@ -383,7 +539,7 @@ class ProductVC: UIViewController, UITableViewDelegate, UITableViewDataSource {
                     cell.backgroundColor = #colorLiteral(red: 1, green: 0.796098727, blue: 0.7392509707, alpha: 0.5959706764)
                 }
             }
-            self.showAlert(title: "Внимание", message: "Выберите все параметры")
+//            self.showAlert(title: "Внимание", message: "Выберите все параметры")
         }else{
             
             
@@ -650,7 +806,14 @@ class PagerViewTVC: UITableViewCell, FSPagerViewDataSource, FSPagerViewDelegate 
         pagerView.delegate = self
         pagerView.dataSource = self
     }
-    
+    @IBOutlet var backFavButton: UIButton!{
+        didSet{
+            backFavButton.layer.cornerRadius = backFavButton.layer.frame.size.height / 2
+            backFavButton.layer.masksToBounds = true
+        }
+    }
+    @IBOutlet var heartButton: UIButton!
+
     @IBOutlet weak var pagerView: FSPagerView!{
         didSet {
             self.pagerView.register(FSPagerViewCell.self, forCellWithReuseIdentifier: "cell")

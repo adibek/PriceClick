@@ -21,7 +21,7 @@ class FavoritesVC: UIViewController, UICollectionViewDataSource, UICollectionVie
     var goodForSegue: Good?
     var shopForSegue: Shop?
     var idForSegue = ""
-    let realm = try! Realm()
+    let realm = try? Realm()
     var widths = CGFloat()
     var heights = CGFloat()
 
@@ -30,7 +30,6 @@ class FavoritesVC: UIViewController, UICollectionViewDataSource, UICollectionVie
         super.viewDidLoad()
         widths = UIScreen.main.bounds.size.width * 0.495
         heights = self.widths * 1.5
-        self.backgroundImage()
         collectionView.delegate = self
         collectionView.dataSource = self
     }
@@ -47,11 +46,13 @@ class FavoritesVC: UIViewController, UICollectionViewDataSource, UICollectionVie
                 tabItem.badgeValue = nil
             }
         }
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
         navigationController?.navigationBar.isTranslucent = false
-        good = realm.objects(Good.self)
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
+        good = realm?.objects(Good.self)
         goods = Array(good!)
-        let result = realm.objects(Shop.self)
-        self.myShops = Array(result)
+        let result = realm?.objects(Shop.self)
+        self.myShops = Array(result!)
         collectionView.reloadData()
         
         
@@ -93,7 +94,8 @@ class FavoritesVC: UIViewController, UICollectionViewDataSource, UICollectionVie
             let url = URL(string: "http://priceclick.kz/profile/uploads/products/min/" + goods[i].mainImage)
             cell.favButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
             cell.productImg.sd_setImage(with: url, completed: nil)
-            cell.productPrice.text = goods[i].price + "тг."
+            
+            cell.productPrice.text = Int(goods[i].price)!.formattedWithSeparator + " тг."
             cell.productName.text = goods[i].name
             cell.favButton.addTarget(self, action: #selector(updateFav(_:)), for: .touchUpInside)
             cell.backFavButton.addTarget(self, action: #selector(updateFav(_:)), for: .touchUpInside)

@@ -897,6 +897,7 @@ class Shops : NSObject, NSCoding, Mappable{
     var monetization : String?
     var shopContacts : String?
     var shopDelivery : String?
+    var shopVverh : String?
     var shopDeliveryPrice : AnyObject?
     var shopDescription : String?
     var shopEmail : String?
@@ -950,7 +951,7 @@ class Shops : NSObject, NSCoding, Mappable{
         userId <- map["user_id"]
         wmode <- map["wmode"]
         message <- map["message"]
-        
+        shopVverh <- map["shop_vverh"]
     }
     
     /**
@@ -986,6 +987,7 @@ class Shops : NSObject, NSCoding, Mappable{
         userId = aDecoder.decodeObject(forKey: "user_id") as? String
         wmode = aDecoder.decodeObject(forKey: "wmode") as? String
         message = aDecoder.decodeObject(forKey: "message") as? String
+        shopVverh = aDecoder.decodeObject(forKey: "shop_vverh") as? String
     }
     
     /**
@@ -1074,6 +1076,9 @@ class Shops : NSObject, NSCoding, Mappable{
         }
         if message != nil{
             aCoder.encode(message, forKey: "message")
+        }
+        if shopVverh != nil{
+            aCoder.encode(shopVverh, forKey: "shop_vverh")
         }
         
     }

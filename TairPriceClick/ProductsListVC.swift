@@ -32,6 +32,9 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     var korzina = [ProductItem]()
     var isEncrease = false
     var mode = 0
+    var scroll = false
+    var query = [String : AnyObject]()
+    
     
     @objc func update() {
         UIView.animate(withDuration: 0.6, animations: {
@@ -66,15 +69,20 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
 
     }
     override func viewWillAppear(_ animated: Bool) {
+        scroll = false
         if isSearch{
-            if products.count < 1{
-                self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемых товаров пока что нет в наличии. Попробуйте проверить позже.")
-                self.title = "Результаты поиска"
-                self.infoButton.image = nil
-                self.infoButton.isEnabled = false
-            }else{
+            self.startLoading()
+            self.title = "Результаты поиска"
+            self.infoButton.image = nil
+            self.infoButton.isEnabled = false
+            self.searchProduct(parameters: query as [String : AnyObject], completionHandler: { goods in
+                self.products = goods
                 self.collectionView.reloadData()
-            }
+                if self.products.count < 1{
+                    self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемых товаров пока что нет в наличии. Повторите попытку позже.")
+                    self.stopLoading()
+                }
+            })
             
         }else{
             makePage()
@@ -107,8 +115,10 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
         }
 
         let realm = try? Realm()
-        let result = realm?.objects(ProductItem.self)
-        korzina = Array(result!)
+        if let result = realm?.objects(ProductItem.self){
+            korzina = Array(result)
+        }
+        
         
         if let realm = realm{
             good = realm.objects(Good.self)
@@ -122,6 +132,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     func makePage(){
         priceImageView.image = nil
         
+        var txt = ""
         if let cityId = UserDefaults.standard.string(forKey: "cityId"){
             var url = ""
             if type == 0{
@@ -129,19 +140,23 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
                 showName = true
                 self.title = "По товарам"
                 url = "http://api.priceclick.kz/api/products/section?city_id=\(cityId)&section_id=\(secId)"
+                txt = "На данный момент в этой категории товары отсутствуют"
             }else if type == 1{
                 showName = false
                 self.infoButton.image = #imageLiteral(resourceName: "info_icon1")
                 self.title = "Товары"
                 url = "http://api.priceclick.kz/api/products/shop?city_id=\(cityId)&shop_id=\(shopId)"
+                txt = "На данный момент в этом магазине товары отсутствуют"
             }else if type == 2{
                 //self.title = "Товары"
                 if shopId != "0"{
                     self.infoButton.image = #imageLiteral(resourceName: "info_icon1")
                     showName = false
+                    txt = "На данный момент в этом магазине товары отсутствуют"
                     url = "http://api.priceclick.kz/api/products/shop-subcategory?shop_id=\(shopId)&city_id=\(cityId)&subcategory_id=\(subSecId)"
                 }else{
                     url = "http://api.priceclick.kz/api/products/subcategory-products?subcategory_id=\(subSecId)&city_id=\(cityId)"
+                    txt = "На данный момент в этой категории товары отсутствуют"
                     self.infoButton.image = nil
                     showName = true
                 }
@@ -150,7 +165,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
             self.getProducts(url: url, completionHandler: { goods in
                 self.products = goods
                 if self.products.isEmpty{
-                    self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемых товаров пока что нет в наличии. Попробуйте проверить позже.")
+                    self.showAlert(title: "Внимание", message: txt)
                 }
                 self.collectionView.reloadData()
             })
@@ -203,7 +218,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     }
     @IBAction func byPrice(_ sender: Any) {
         if isEncrease{
-            priceImageView.image = #imageLiteral(resourceName: "111 голубой 2")
+            priceImageView.image =  #imageLiteral(resourceName: "111 голубой 1")
             for i in 0..<products.count{
                 for j in 0..<products.count{
                     if Int(products[i].productPrice!)! > Int(products[j].productPrice!)!{
@@ -214,7 +229,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
             byTopButton.setTitleColor(#colorLiteral(red: 1.0, green: 1.0, blue: 1.0, alpha: 1.0), for: .normal)
             byPriceButton.setTitleColor(#colorLiteral(red: 0, green: 0.9914394021, blue: 1, alpha: 1), for: .normal)
         }else{
-            priceImageView.image = #imageLiteral(resourceName: "111 голубой 1")
+            priceImageView.image = #imageLiteral(resourceName: "111 голубой 2")
             for i in 0..<products.count{
                 for j in 0..<products.count{
                     if Int(products[i].productPrice!)! < Int(products[j].productPrice!)!{
@@ -238,7 +253,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     
     @IBAction func changeButton(_ sender: Any) {
         if mode == 0{
-            self.changeButton.setImage(#imageLiteral(resourceName: "icon_card_item"), for: .normal)
+            self.changeButton.setImage(UIImage(named: "333"), for: .normal)
             mode = 1
             self.collectionView.reloadData()
         }else if mode == 1{
@@ -279,6 +294,14 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
                         cell4.priceLabel.text = "\(xx) тг."
                     }
                     
+                }
+                for good in goods{
+                    if good.id == products[i].id!{
+                        cell4.favButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
+                        break
+                    }else{
+                        cell4.favButton.setImage(#imageLiteral(resourceName: "favTab2"), for: .normal)
+                    }
                 }
                 cell4.favButton.addTarget(self, action: #selector(updateFav(_:)), for: .touchUpInside)
                 cell4.backFavButton.addTarget(self, action: #selector(updateFav(_:)), for: .touchUpInside)
@@ -373,7 +396,14 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
                 cell5.minusButton.layer.cornerRadius = 5
                 cell5.circleView.layer.cornerRadius = 12.5
                 cell5.circleView.layer.borderWidth = 1
-
+                for good in goods{
+                    if good.id == products[i].id!{
+                        cell5.favButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
+                        break
+                    }else{
+                        cell5.favButton.setImage(#imageLiteral(resourceName: "favTab2"), for: .normal)
+                    }
+                }
                 return cell5
             }
             
@@ -445,21 +475,28 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
         return products.count
     }
     func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
-        if type == 0{
-            if let cityId = UserDefaults.standard.string(forKey: "cityId"){
-                let url = "http://api.priceclick.kz/api/products/shop?city_id=\(cityId)&shop_id=\(products[indexPath.row].shopId!)"
-                self.getProducts(url: url, completionHandler: { goods in
-                    self.products = goods
-                    self.type = 1
-                    self.title = "Товары"
-                    self.collectionView.reloadData()
-                })
-                
-            }
-        }else{
+//        if type == 0{
+//            if let cityId = UserDefaults.standard.string(forKey: "cityId"){
+//                self.shopId = products[indexPath.row].shopId!
+//                let url = "http://api.priceclick.kz/api/products/shop?city_id=\(cityId)&shop_id=\(products[indexPath.row].shopId!)"
+//                self.getProducts(url: url, completionHandler: { goods in
+//                    self.products = goods
+//                    self.type = 1
+//                    if let title = self.products[indexPath.row].shopName{
+//                        self.title = title as! String
+//                        self.infoButton.image = #imageLiteral(resourceName: "info_icon1")
+//                        self.infoButton.isEnabled = true
+//                    }else{
+//                        self.title = "Товары"
+//                    }
+//                    self.collectionView.reloadData()
+//                })
+//
+//            }
+//        }else{
             self.selectedProduct = self.products[indexPath.row]
             self.performSegue(withIdentifier: "toItem", sender: self)
-        }
+//        }
         
     }
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
@@ -471,9 +508,9 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
             return CGSize(width: modeOneWidth, height: modeOneHieght)
         }else{
             if type == 0{
-                return CGSize(width: modeOneWidth, height: modeOneWidth / 0.77)
+                return CGSize(width: modeOneWidth, height: modeOneWidth / 0.75)
             }else{
-                return CGSize(width: modeOneWidth, height: modeOneWidth / 0.8)
+                return CGSize(width: modeOneWidth, height: modeOneWidth / 0.75)
             }
             
         }
@@ -498,6 +535,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
         }else if segue.identifier == "toItem"{
             let product: ProductVC = segue.destination as! ProductVC
             product.product = selectedProduct
+            product.scroll = scroll
         }else if segue.identifier == "toShopInfo"{
             let shopInfo: ShopInfoVC = segue.destination as! ShopInfoVC
             shopInfo.info = self.thisShop
@@ -506,20 +544,28 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
     
     
     @objc func openShop(_ sender: AnyObject) {
+        self.selectedProduct = self.products[sender.tag!]
+        self.performSegue(withIdentifier: "toItem", sender: self)
         
-        let tag = sender.tag!
-        if let cityId = UserDefaults.standard.string(forKey: "cityId"){
-            let url = "http://api.priceclick.kz/api/products/shop?city_id=\(cityId)&shop_id=\(products[tag].shopId!)"
-            self.getProducts(url: url, completionHandler: { goods in
-                self.products = goods
-                self.type = 1
-                self.title = "Товары"
-                self.collectionView.reloadData()
-                
-                
-            })
-            
-        }
+        
+//        let tag = sender.tag!
+//        if let cityId = UserDefaults.standard.string(forKey: "cityId"){
+//            self.shopId = products[tag].shopId!
+//            let url = "http://api.priceclick.kz/api/products/shop?city_id=\(cityId)&shop_id=\(products[tag].shopId!)"
+//            self.getProducts(url: url, completionHandler: { goods in
+//                self.products = goods
+//                self.type = 1
+//                if let title = self.products[tag].shopName{
+//                    self.title = title as! String
+//                }else{
+//                    self.title = "Товары"
+//                }
+//                self.collectionView.reloadData()
+//
+//
+//            })
+//
+//        }
         
         
     }
@@ -542,19 +588,20 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
                     if count > 0{
                         self.add(tag: tag)
                     }else{
-                        let refreshAlert = UIAlertController(title: "Внимание", message: "В Вашей корзине находится неоформленный заказ с другого магазина. Очистить корзину?", preferredStyle: UIAlertControllerStyle.alert)
+                        let refreshAlert = UIAlertController(title: "Внимание", message: "В Вашей корзине находится неоформленный заказ с другого магазина. Оформить заказ сейчас или удалить его?", preferredStyle: UIAlertControllerStyle.alert)
                         
-                        refreshAlert.addAction(UIAlertAction(title: "Ok", style: .default, handler: { (action: UIAlertAction!) in
+                        refreshAlert.addAction(UIAlertAction(title: "Оформить", style: .default, handler: { (action: UIAlertAction!) in
+                            
+                            self.tabBarController?.selectedIndex = 2
+                        }))
+                        
+                        refreshAlert.addAction(UIAlertAction(title: "Удалить", style: .destructive, handler: { (action: UIAlertAction!) in
                             let realm = try? Realm()
                             let result = realm?.objects(ProductItem.self)
                             try? realm?.write {
                                 realm?.delete(result!)
                             }
                             self.add(tag: tag)
-                        }))
-                        
-                        refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
-                            
                         }))
                         
                         present(refreshAlert, animated: true, completion: nil)
@@ -641,6 +688,7 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
         
         refreshAlert.addAction(UIAlertAction(title: "OК", style: .default, handler: { (action: UIAlertAction!) in
             self.selectedProduct = self.products[tag]
+            self.scroll = true
             self.performSegue(withIdentifier: "toItem", sender: self)
         }))
         
@@ -734,31 +782,41 @@ class ProductsListVC: UIViewController, UICollectionViewDelegate, UICollectionVi
             }
         }
         else{
+            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы уверенны, что хотите удалить товар из избранного?", preferredStyle: UIAlertControllerStyle.alert)
             
-            if mode == 0 || mode == 1{
-                if type == 0{
-                    let cell = collectionView.cellForItem(at: ip) as! cvc
-                    cell.favButton.setImage(UIImage(named: "newHeart"), for: .normal)
-                }else{
-                    let cell = collectionView.cellForItem(at: ip) as! shopCvc
-                    cell.favButton.setImage(UIImage(named: "newHeart"), for: .normal)
-                }
-            }else if mode == 2{
-                let cell = collectionView.cellForItem(at: ip) as! ThirdCellWithButton
-                cell.favButton.setImage(UIImage(named: "newHeart"), for: .normal)
-            }
-            
-            try? realm.write {
-                var ind = 0
-                for i in 0..<self.goods.count{
-                    if self.goods[i].id == id{
-                        ind = i
-                        break
+            refreshAlert.addAction(UIAlertAction(title: "Да", style: .default, handler: { (action: UIAlertAction!) in
+                if self.mode == 0 || self.mode == 1{
+                    if self.type == 0{
+                        let cell = self.collectionView.cellForItem(at: ip) as! cvc
+                        cell.favButton.setImage(UIImage(named: "newHeart"), for: .normal)
+                    }else{
+                        let cell = self.collectionView.cellForItem(at: ip) as! shopCvc
+                        cell.favButton.setImage(UIImage(named: "newHeart"), for: .normal)
                     }
+                }else if self.mode == 2{
+                    let cell = self.collectionView.cellForItem(at: ip) as! ThirdCellWithButton
+                    cell.favButton.setImage(UIImage(named: "newHeart"), for: .normal)
                 }
-                self.goods.remove(at: ind)
-                realm.delete(result)
-            }
+                
+                try? realm.write {
+                    var ind = 0
+                    for i in 0..<self.goods.count{
+                        if self.goods[i].id == id{
+                            ind = i
+                            break
+                        }
+                    }
+                    self.goods.remove(at: ind)
+                    realm.delete(result)
+                }
+            }))
+            
+            refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
+                
+            }))
+            
+            present(refreshAlert, animated: true, completion: nil)
+            
         }
     }
     
@@ -862,8 +920,11 @@ class Good: Object{
     @objc dynamic var shopName = String()
     @objc dynamic var shopId = String()
     @objc dynamic var price = String()
+    @objc dynamic var count = Int()
     @objc dynamic var descriptionField = String()
     @objc dynamic var rating = String()
+    
+    var params = List<Params>()
     var imgs = List<String>()
 }
 

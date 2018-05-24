@@ -25,7 +25,9 @@ class MyProfileViewController: UIViewController, AKFViewControllerDelegate {
 
     override func viewDidLoad() {
         super.viewDidLoad()
-
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
+        navigationController?.navigationBar.isTranslucent = false
+        navigationController?.navigationBar.barTintColor = #colorLiteral(red: 0.09803921569, green: 0.09803921569, blue: 0.09803921569, alpha: 1)
         hideKeyboardWhenTappedAround()
 
         showAccountOnAppear = accountKit.currentAccessToken != nil

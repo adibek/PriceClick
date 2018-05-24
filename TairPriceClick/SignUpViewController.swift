@@ -12,7 +12,7 @@ import DropDown
 import Alamofire
 import TextFieldEffects
 
-class SignUpViewController: UIViewController, UITableViewDelegate, UITableViewDataSource {
+class SignUpViewController: UIViewController, UITableViewDelegate, UITableViewDataSource, UITextFieldDelegate {
     
     var phoneNumber = ""
     var cities = [Cities]()
@@ -92,9 +92,12 @@ class SignUpViewController: UIViewController, UITableViewDelegate, UITableViewDa
         tableView.delegate = self
         tableView.dataSource = self
         tableView.tableFooterView = UIView()
+        passText.delegate = self
+        passText.addTarget(self, action: #selector(textFieldDidEndEditing(_:)), for: .editingChanged)
+        passRepeatText.delegate = self
+        passRepeatText.addTarget(self, action: #selector(textFieldDidEndEditing(_:)), for: .editingChanged)
         
-        
-        cityView.frame = CGRect(x:0, y: 64, width: w, height: h)
+        cityView.frame = CGRect(x:0, y: 0, width: w, height: h)
         hideKeyboardWhenTappedAround()
     }
  
@@ -232,6 +235,31 @@ class SignUpViewController: UIViewController, UITableViewDelegate, UITableViewDa
         cityView.removeFromSuperview()
     }
 
+    func textFieldDidEndEditing(_ textField: UITextField) {
+        if textField == self.passText{
+            if passText.text!.count < 6{
+                showWarning(textField: textField, text: "Пароль должен содержать минимум 6 символов", view: whiteView)
+            }else{
+                warningLabel.removeFromSuperview()
+            }
+        }else if textField == passRepeatText{
+            if passText.text! != passRepeatText.text!{
+                showWarning(textField: textField, text: "Пароли не совпадают", view: whiteView)
+            }else{
+                warningLabel.removeFromSuperview()
+            }
+        }
+    }
+    func textFieldDidChange(textField: UITextField){
+        if textField == passText{
+            if passText.text!.count > 5{
+                warningLabel.removeFromSuperview()
+            }
+        }else if textField == passRepeatText{
+            warningLabel.removeFromSuperview()
+        }
+    }
+    @IBOutlet var whiteView: UIView!
     
 }
 
@@ -247,6 +275,17 @@ extension NSRegularExpression {
     }
 }
 
+let warningLabel = UILabel()
 
+extension UIViewController{
+    func showWarning(textField: UITextField, text: String, view: UIView){
+        warningLabel.text = text
+        warningLabel.textColor = UIColor.red
+        warningLabel.font = warningLabel.font.withSize(10)
+        let y = textField.frame.origin.y + textField.frame.size.height + 1
+        warningLabel.frame = CGRect(x: textField.frame.origin.x, y: y, width: UIScreen.main.bounds.size.width, height: 10)
+        view.addSubview(warningLabel)
+    }
+}
 
 

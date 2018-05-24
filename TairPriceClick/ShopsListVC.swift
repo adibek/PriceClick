@@ -129,11 +129,11 @@ class ShopsListVC: UIViewController, UITableViewDelegate, UITableViewDataSource,
                 }
             }
         }
-        print(url)
+        
         self.getShops(url: url, completionHandler: { shops in
             self.shops = shops
             if self.shops.isEmpty{
-                self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемыe магазины не найдены. Попробуйте проверить позже.")
+                self.showAlert(title: "Внимание", message: "На данный момент в этой катерогии магазины отсутствуют")
             }
             self.taleView.reloadData()
             
@@ -152,14 +152,16 @@ class ShopsListVC: UIViewController, UITableViewDelegate, UITableViewDataSource,
     func tableView(_ tableView: UITableView, cellForRowAt indexPath: IndexPath) -> UITableViewCell {
         let i = indexPath.section
         let cell = tableView.dequeueReusableCell(withIdentifier: "cell", for: indexPath) as! tvc
-        print("shop id", self.shops[i].shopId)
+        
         
         for shop in myShops{
-            if shop.id == shops[i].shopId!{
-                cell.heartButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
-                break
-            }else{
-                cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
+            if let shopId = shops[i].shopId{
+                if shop.id == shopId{
+                    cell.heartButton.setImage(#imageLiteral(resourceName: "newFullHeart"), for: .normal)
+                    break
+                }else{
+                    cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
+                }
             }
         }
         if let name = self.shops[i].shopName{
@@ -171,10 +173,15 @@ class ShopsListVC: UIViewController, UITableViewDelegate, UITableViewDataSource,
         }
         if let top = self.shops[i].shopTop{
             if top == "1"{
-                cell.backgroundColor = UIColor(hexString: "#fffee2")
+                cell.backgroundColor = #colorLiteral(red: 0.9607843137, green: 0.8823529412, blue: 0.8823529412, alpha: 1)
             }
             else {
                 cell.backgroundColor = UIColor.white
+            }
+        }
+        if let vverh = shops[i].shopVverh{
+            if vverh == "1"{
+                cell.backgroundColor = UIColor(hexString: "#fffee2")
             }
         }
         if let fast = shops[i].shopFastDelivery{
@@ -240,18 +247,30 @@ class ShopsListVC: UIViewController, UITableViewDelegate, UITableViewDataSource,
                 realm.add(shop!)
             }
         }else{
-            cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
-            try! realm.write {
-                var ind = 0
-                for i in 0..<myShops.count{
-                    if self.myShops[i].id == id{
-                        ind =  i
-                        break
+            let refreshAlert = UIAlertController(title: "Внимание", message: "Вы уверенны, что хотите удалить магазин из избранного?", preferredStyle: UIAlertControllerStyle.alert)
+            
+            refreshAlert.addAction(UIAlertAction(title: "Да", style: .default, handler: { (action: UIAlertAction!) in
+                cell.heartButton.setImage(UIImage(named: "newHeart"), for: .normal)
+                try! realm.write {
+                    var ind = 0
+                    for i in 0..<self.myShops.count{
+                        if self.myShops[i].id == id{
+                            ind =  i
+                            break
+                        }
                     }
+                    self.myShops.remove(at: ind)
+                    realm.delete(result)
                 }
-                self.myShops.remove(at: ind)
-                realm.delete(result)
-            }
+
+            }))
+            
+            refreshAlert.addAction(UIAlertAction(title: "Отмена", style: .destructive, handler: { (action: UIAlertAction!) in
+                
+            }))
+            
+            present(refreshAlert, animated: true, completion: nil)
+            
         }
     }
     

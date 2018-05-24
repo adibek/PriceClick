@@ -26,7 +26,8 @@ class TabController: UITabBarController {
         
         
         self.setViewControllers(vcs!, animated: true)
-        
+        UIApplication.shared.statusBarStyle = .lightContent
+
     }
     override func viewDidAppear(_ animated: Bool) {
         

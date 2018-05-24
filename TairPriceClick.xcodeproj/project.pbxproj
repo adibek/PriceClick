@@ -13,6 +13,7 @@
 		9426BCC42094B3CB003FF02D /* TabController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9426BCC32094B3CB003FF02D /* TabController.swift */; };
 		9426BCC62094B410003FF02D /* NavigationViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9426BCC52094B410003FF02D /* NavigationViewController.swift */; };
 		9426BCC82094C6C6003FF02D /* SignUpViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 9426BCC72094C6C5003FF02D /* SignUpViewController.swift */; };
+		94629DB120B2D8CD002BBAB2 /* NavViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94629DB020B2D8CD002BBAB2 /* NavViewController.swift */; };
 		94A75A2A2088436400B5E8F4 /* SubCategoriesVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A75A292088436400B5E8F4 /* SubCategoriesVC.swift */; };
 		94A75A2C20885E8000B5E8F4 /* ProductsListVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A75A2B20885E8000B5E8F4 /* ProductsListVC.swift */; };
 		94A75A2E20888A4000B5E8F4 /* ProductVC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 94A75A2D20888A4000B5E8F4 /* ProductVC.swift */; };
@@ -48,6 +49,7 @@
 		9426BCC32094B3CB003FF02D /* TabController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TabController.swift; sourceTree = "<group>"; };
 		9426BCC52094B410003FF02D /* NavigationViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavigationViewController.swift; sourceTree = "<group>"; };
 		9426BCC72094C6C5003FF02D /* SignUpViewController.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = SignUpViewController.swift; sourceTree = "<group>"; };
+		94629DB020B2D8CD002BBAB2 /* NavViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NavViewController.swift; sourceTree = "<group>"; };
 		94A75A292088436400B5E8F4 /* SubCategoriesVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SubCategoriesVC.swift; sourceTree = "<group>"; };
 		94A75A2B20885E8000B5E8F4 /* ProductsListVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductsListVC.swift; sourceTree = "<group>"; };
 		94A75A2D20888A4000B5E8F4 /* ProductVC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProductVC.swift; sourceTree = "<group>"; };
@@ -135,6 +137,7 @@
 		94BA0DF720875B7E0097B5A5 /* Support */ = {
 			isa = PBXGroup;
 			children = (
+				94629DB020B2D8CD002BBAB2 /* NavViewController.swift */,
 				94D3113A209977530009A0A0 /* AboutUsViewController.swift */,
 				94A75A292088436400B5E8F4 /* SubCategoriesVC.swift */,
 				94D311382099719C0009A0A0 /* InfoVC.swift */,
@@ -349,6 +352,7 @@
 				94A75A2E20888A4000B5E8F4 /* ProductVC.swift in Sources */,
 				94BA0DF220874AB30097B5A5 /* Requests.swift in Sources */,
 				9426BCC22094ACFD003FF02D /* LoginViewController.swift in Sources */,
+				94629DB120B2D8CD002BBAB2 /* NavViewController.swift in Sources */,
 				94BD7038209AF4E500580DA5 /* ProfileVC.swift in Sources */,
 				94BD703E209B03C400580DA5 /* OrderDetailVC.swift in Sources */,
 				94BA0C83208745B70097B5A5 /* AppDelegate.swift in Sources */,

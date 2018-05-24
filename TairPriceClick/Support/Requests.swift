@@ -73,10 +73,14 @@ extension UITableViewCell{
 
 extension UIViewController{
 
+    func showError(){
+        
+    }
     
     func getShopInfo(shopId: String, completionHandler: @escaping (_ cats: [ShopInfo]) -> ()) {
         
         var fullCategories = [ShopInfo]()
+        
         Alamofire.request(basicUrl + "shops/shop-info?shop_id=\(shopId)", method: .get, parameters: nil, encoding: JSONEncoding.default, headers: nil).responseArray { (response: DataResponse<[ShopInfo]>) in
             if let code = response.response?.statusCode{
                 if code == 200{
@@ -212,6 +216,7 @@ extension UIViewController{
         var fullCategories = [Product]()
         Alamofire.request(basicUrl + "products/global", method: .post, parameters: parameters, encoding: JSONEncoding.default, headers: nil).responseArray { (response: DataResponse<[Product]>) in
             if let code = response.response?.statusCode{
+                self.stopLoading()
                 if code == 200{
                     let cats = response.result.value
                     if let catArray = cats {
@@ -219,6 +224,8 @@ extension UIViewController{
                             fullCategories.append(item)
                         }
                         completionHandler(fullCategories)
+                    }else{
+                        self.showAlert(title: "Внимание", message: "К сожалению, запрашиваемых товаров пока что нет в наличии. Повторите попытку позже.")
                     }
                 }else{
                     completionHandler(fullCategories)
